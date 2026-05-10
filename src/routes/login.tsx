@@ -33,7 +33,7 @@ function LoginPage() {
   };
 
   return (
-    <div style={shell}>
+    <div style={shell} data-lp-shell>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&display=swap');
         .lp-input{background:#fffdf9;border:1px solid #e2dccf;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;color:#16140f;transition:all .15s;width:100%}
@@ -48,7 +48,7 @@ function LoginPage() {
       `}</style>
 
       {/* Left: brand panel */}
-      <div style={brandPanel}>
+      <div style={brandPanel} data-lp-brand>
         <div style={{ position: "relative", zIndex: 2 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 48 }}>
             <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#d94f1e", boxShadow: "0 0 0 5px rgba(217,79,30,.18)" }} />
