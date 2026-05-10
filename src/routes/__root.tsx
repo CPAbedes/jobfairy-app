@@ -73,14 +73,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "JobTrackr" },
+      { name: "description", content: "Job Hunt Hub is a web application for tracking job applications." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "JobTrackr" },
-      { property: "og:description", content: "Track your job applications" },
+      { property: "og:description", content: "Job Hunt Hub is a web application for tracking job applications." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "JobTrackr" },
+      { name: "twitter:description", content: "Job Hunt Hub is a web application for tracking job applications." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f403d456-d7ad-4186-8360-15e1a89401c9/id-preview-8671a90b--225a7323-22f8-4999-aa4a-ceb5a1d0aa49.lovable.app-1778383320186.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f403d456-d7ad-4186-8360-15e1a89401c9/id-preview-8671a90b--225a7323-22f8-4999-aa4a-ceb5a1d0aa49.lovable.app-1778383320186.png" },
     ],
     links: [
       {
