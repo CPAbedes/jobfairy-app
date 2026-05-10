@@ -178,6 +178,11 @@ export function JobTracker() {
             />
           )}
         </main>
+        <footer className="jt-footer">
+          <span>JobTrackr™</span>
+          <span className="jt-footer-sep">·</span>
+          <span>Created by Christian Paul Abedes</span>
+        </footer>
       </div>
       {(adding || editing) && (
         <FormModal
