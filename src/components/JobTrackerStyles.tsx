@@ -208,6 +208,9 @@ html.dark {
 .jt .dark-toggle-thumb{width:16px;height:16px;background:var(--card);border-radius:50%;position:absolute;top:2px;left:3px;transition:left .18s ease;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .jt .dark-toggle.on .dark-toggle-thumb{left:21px;background:var(--accent)}
 
+.jt .jt-footer{margin-top:auto;padding:24px 28px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;color:var(--text3);letter-spacing:.2px;font-family:var(--jt-font)}
+.jt .jt-footer-sep{opacity:.5}
+
 @media(max-width:600px){
   .jt .topbar{flex-wrap:wrap;gap:10px;padding:12px 16px}
   .jt .main{padding:18px 16px 40px}
