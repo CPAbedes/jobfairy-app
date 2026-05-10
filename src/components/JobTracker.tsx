@@ -120,12 +120,12 @@ export function JobTracker() {
       }
       const { data, error } = await supabase.from("job_applications").update({ ...payload, history }).eq("id", editId).select().single();
       if (error) { alert(error.message); return; }
-      setApps(prev => prev.map(a => a.id === editId ? (data as App) : a));
+      setApps(prev => prev.map(a => a.id === editId ? (data as unknown as App) : a));
     } else {
       const history = [{ status: form.status, date: form.date_applied, note: "Application submitted" }];
       const { data, error } = await supabase.from("job_applications").insert({ ...payload, history }).select().single();
       if (error) { alert(error.message); return; }
-      setApps(prev => [data as App, ...prev]);
+      setApps(prev => [data as unknown as App, ...prev]);
     }
     setEditing(null); setAdding(null);
   };
