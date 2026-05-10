@@ -298,7 +298,7 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
               const count = appByDay[d] || 0;
               const isToday = d === now.getDate();
               const intensity = count ? Math.min(1, count / 5) : 0;
-              const style: React.CSSProperties = count ? { background: `rgba(37,99,235,${0.15 + intensity * 0.65})`, color: "var(--accent)", fontWeight: 600 } : {};
+              const style: React.CSSProperties = count ? { background: `color-mix(in oklab, var(--accent) ${15 + intensity * 65}%, var(--bg-elev))`, color: "#fff", fontWeight: 700 } : {};
               return <div key={d} className={`cal-day${isToday ? " today" : ""}`} style={style} title={count ? `${count} app${count > 1 ? "s" : ""}` : "No apps"}>{d}</div>;
             })}
           </div>
