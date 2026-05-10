@@ -73,7 +73,7 @@ export function JobTracker() {
     supabase.from("job_applications").select("*").order("date_applied", { ascending: false }).then(({ data, error }) => {
       if (!alive) return;
       if (error) console.error(error);
-      setApps((data as App[] | null) ?? []);
+      setApps((data as unknown as App[] | null) ?? []);
       setLoading(false);
     });
     return () => { alive = false; };
