@@ -5,8 +5,9 @@ import { JobTrackerStyles } from "./JobTrackerStyles";
 
 const STATUSES = ["Applied", "Interview Scheduled", "Interviewed", "Offer Received", "Rejected", "Ghosted"] as const;
 const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
-const PLATFORMS_CORP = ["LinkedIn", "Indeed", "Glassdoor", "Greenhouse", "Lever", "Company Website", "Referral", "Other"];
-const PLATFORMS_FREE = ["Upwork", "OnlineJobsPh", "Freelancer", "Fiverr", "Toptal", "LinkedIn", "Twitter/X", "Direct", "Other"];
+const PLATFORMS_COMMON = ["LinkedIn", "Indeed", "Upwork", "OnlineJobsPh", "Facebook", "Threads", "Glassdoor", "Greenhouse", "Lever", "Freelancer", "Fiverr", "Toptal", "Company Website", "Referral", "Twitter/X", "Direct", "Other"];
+const PLATFORMS_CORP = PLATFORMS_COMMON;
+const PLATFORMS_FREE = PLATFORMS_COMMON;
 const STATUS_KEY: Record<string, string> = { "Applied": "applied", "Interview Scheduled": "interview_scheduled", "Interviewed": "interviewed", "Offer Received": "offer_received", "Rejected": "rejected", "Ghosted": "ghosted" };
 const STATUS_LABEL: Record<string, string> = { "applied": "Applied", "interview_scheduled": "Interview Scheduled", "interviewed": "Interviewed", "offer_received": "Offer Received", "rejected": "Rejected", "ghosted": "Ghosted" };
 const PRIORITY_COLOR: Record<string, string> = { "low": "#86efac", "medium": "#fde68a", "high": "#fb923c", "urgent": "#f87171" };
