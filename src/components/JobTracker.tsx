@@ -201,6 +201,7 @@ export function JobTracker() {
 }
 
 function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => void; onAdd: () => void }) {
+  const [dayModal, setDayModal] = useState<{ date: string; apps: App[] } | null>(null);
   const corp = apps.filter(a => a.type === "corporate");
   const free = apps.filter(a => a.type === "freelance");
   const interviews = apps.filter(a => a.status === "interview_scheduled" || a.status === "interviewed").length;
@@ -226,6 +227,19 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
   const platforms = Object.entries(platMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const maxP = platforms[0]?.[1] ?? 1;
 
+  // Response rate per platform
+  const platStats: Record<string, { total: number; responded: number }> = {};
+  apps.forEach(a => {
+    const p = a.platform || "Unknown";
+    if (!platStats[p]) platStats[p] = { total: 0, responded: 0 };
+    platStats[p].total += 1;
+    if (a.status !== "applied" && a.status !== "ghosted") platStats[p].responded += 1;
+  });
+  const platRates = Object.entries(platStats)
+    .map(([name, v]) => ({ name, total: v.total, responded: v.responded, rate: v.total ? Math.round((v.responded / v.total) * 100) : 0 }))
+    .sort((a, b) => b.rate - a.rate || b.total - a.total);
+  const bestPlat = platRates[0];
+
   // Mini calendar
   const now = new Date();
   const year = now.getFullYear(), month = now.getMonth();
@@ -243,6 +257,16 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
   const dayCounts = weekDays.map(d => apps.filter(a => new Date(a.date_applied).toDateString() === d.toDateString()).length);
   const maxDay = Math.max(1, ...dayCounts);
   const dayLabels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+  const openDay = (d: number) => {
+    const dayApps = apps.filter(a => {
+      const dt = new Date(a.date_applied);
+      return dt.getFullYear() === year && dt.getMonth() === month && dt.getDate() === d;
+    });
+    if (!dayApps.length) return;
+    const label = new Date(year, month, d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    setDayModal({ date: label, apps: dayApps });
+  };
 
   return (
     <>
@@ -294,6 +318,32 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
         </div>
       </div>
 
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>Response Rate by Platform</div>
+          {bestPlat && bestPlat.total > 0 && (
+            <div style={{ fontSize: 12, color: "var(--text2)" }}>
+              Best performer: <span style={{ color: "var(--accent)", fontWeight: 600 }}>{bestPlat.name}</span> ({bestPlat.rate}%)
+            </div>
+          )}
+        </div>
+        {platRates.length ? (
+          <div className="platform-bar-wrap">
+            {platRates.map((p, i) => (
+              <div key={p.name} className="platform-row">
+                <div className="platform-name">{p.name}</div>
+                <div className="bar-track">
+                  <div className="bar-fill" style={{ width: `${Math.max(2, p.rate)}%`, background: PLATFORM_COLORS[i % PLATFORM_COLORS.length] }} />
+                </div>
+                <div className="bar-count" style={{ minWidth: 90, textAlign: "right" }}>
+                  {p.rate}% <span style={{ color: "var(--text3)", fontWeight: 400 }}>({p.responded}/{p.total})</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : <div style={{ color: "var(--text3)", fontSize: 13, padding: "16px 0", textAlign: "center" }}>No data yet</div>}
+      </div>
+
       <div className="charts-grid">
         <div className="card">
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Mini Calendar — Applications</div>
@@ -304,8 +354,8 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
               const count = appByDay[d] || 0;
               const isToday = d === now.getDate();
               const intensity = count ? Math.min(1, count / 5) : 0;
-              const style: React.CSSProperties = count ? { background: `color-mix(in oklab, var(--accent) ${15 + intensity * 65}%, var(--bg-elev))`, color: "#fff", fontWeight: 700 } : {};
-              return <div key={d} className={`cal-day${isToday ? " today" : ""}`} style={style} title={count ? `${count} app${count > 1 ? "s" : ""}` : "No apps"}>{d}</div>;
+              const style: React.CSSProperties = count ? { background: `color-mix(in oklab, var(--accent) ${15 + intensity * 65}%, var(--bg-elev))`, color: "#fff", fontWeight: 700, cursor: "pointer" } : {};
+              return <div key={d} className={`cal-day${isToday ? " today" : ""}`} style={style} title={count ? `${count} app${count > 1 ? "s" : ""} — click to view` : "No apps"} onClick={() => openDay(d)}>{d}</div>;
             })}
           </div>
           <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8, textAlign: "center" }}>{now.toLocaleString("default", { month: "long" })} {year}</div>
@@ -335,6 +385,26 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
           <div className="empty"><div className="empty-icon">📋</div><div className="empty-title">No applications yet</div><div>Add your first application to get started.</div><br /><button className="btn btn-primary" onClick={onAdd}>＋ Add Application</button></div>
         }
       </div>
+
+      {dayModal && (
+        <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) setDayModal(null); }}>
+          <div className="modal fade-in" style={{ maxWidth: 600 }}>
+            <div className="modal-title">
+              <div>
+                <div>Applications</div>
+                <div style={{ fontSize: 12, fontWeight: 400, color: "var(--text2)" }}>{dayModal.date} · {dayModal.apps.length} app{dayModal.apps.length > 1 ? "s" : ""}</div>
+              </div>
+              <button className="close-btn" onClick={() => setDayModal(null)}>×</button>
+            </div>
+            <div style={{ padding: 0, overflow: "hidden" }}>
+              <JobTable list={dayModal.apps} onView={(a) => { setDayModal(null); onView(a); }} onEdit={() => {}} onDelete={() => {}} hideActions />
+            </div>
+            <div className="form-actions">
+              <button className="btn btn-ghost" onClick={() => setDayModal(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
