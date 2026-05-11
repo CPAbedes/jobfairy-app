@@ -424,7 +424,6 @@ function ListView({ type, filtered, search, setSearch, filterStatus, setFilterSt
           <option value="all">All Status</option>
           {STATUSES.map(s => <option key={s} value={STATUS_KEY[s]}>{s}</option>)}
         </select>
-        <button className="btn btn-primary btn-sm" onClick={onAdd}>＋ Add</button>
       </div>
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         {filtered.length ? <div className="table-wrap"><JobTable list={filtered} onView={onView} onEdit={onEdit} onDelete={onDelete} /></div> :
@@ -493,11 +492,18 @@ function FormModal({ initial, defaultType, onClose, onSave }: {
   });
   const platforms = form.type === "freelance" ? PLATFORMS_FREE : PLATFORMS_CORP;
   const update = <K extends keyof FormData>(k: K, v: FormData[K]) => setForm(f => ({ ...f, [k]: v }));
-  const submit = () => {
+  const [submitting, setSubmitting] = useState(false);
+  const submit = async () => {
+    if (submitting) return;
     if (!form.company.trim() || !form.title.trim() || !form.date_applied) {
       alert("Please fill in company, title, and date."); return;
     }
-    onSave(form, initial?.id ?? null);
+    setSubmitting(true);
+    try {
+      await onSave(form, initial?.id ?? null);
+    } finally {
+      setSubmitting(false);
+    }
   };
   return (
     <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -533,8 +539,10 @@ function FormModal({ initial, defaultType, onClose, onSave }: {
           <div className="form-group full"><label>Notes / Next Steps</label><textarea className="form-input" value={form.notes} onChange={e => update("notes", e.target.value)} placeholder="Any notes, follow-up actions…" /></div>
         </div>
         <div className="form-actions">
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={submit}>{initial ? "Save Changes" : "Add Application"}</button>
+          <button className="btn btn-ghost" onClick={onClose} disabled={submitting}>Cancel</button>
+          <button className="btn btn-primary" onClick={submit} disabled={submitting}>
+            {submitting ? "Saving…" : initial ? "Save Changes" : "Add Application"}
+          </button>
         </div>
       </div>
     </div>
