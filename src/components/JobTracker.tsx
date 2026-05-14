@@ -240,6 +240,7 @@ export function JobTracker() {
 function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => void; onAdd: () => void }) {
   const [dayModal, setDayModal] = useState<{ date: string; apps: App[] } | null>(null);
   const [calOffset, setCalOffset] = useState(0); // 0 = current month, -1 = previous, +1 = next
+  const [recentSort, setRecentSort] = useState<"priority" | "date_new" | "date_old" | "company">("priority");
   const corp = apps.filter(a => a.type === "corporate");
   const free = apps.filter(a => a.type === "freelance");
   const interviews = apps.filter(a => a.status === "interview_scheduled" || a.status === "interviewed").length;
@@ -264,6 +265,18 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
   apps.forEach(a => { if (a.platform) platMap[a.platform] = (platMap[a.platform] || 0) + 1; });
   const platforms = Object.entries(platMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const maxP = platforms[0]?.[1] ?? 1;
+
+  const PRIORITY_RANK: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
+  const sortedRecent = [...apps].sort((a, b) => {
+    if (recentSort === "priority") {
+      const d = (PRIORITY_RANK[b.priority] || 0) - (PRIORITY_RANK[a.priority] || 0);
+      if (d !== 0) return d;
+      return (b.date_applied || "").localeCompare(a.date_applied || "");
+    }
+    if (recentSort === "date_new") return (b.date_applied || "").localeCompare(a.date_applied || "");
+    if (recentSort === "date_old") return (a.date_applied || "").localeCompare(b.date_applied || "");
+    return a.company.localeCompare(b.company);
+  }).slice(0, 8);
 
   // Response rate per platform
   const platStats: Record<string, { total: number; responded: number }> = {};
