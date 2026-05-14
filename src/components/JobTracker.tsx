@@ -239,6 +239,7 @@ export function JobTracker() {
 
 function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => void; onAdd: () => void }) {
   const [dayModal, setDayModal] = useState<{ date: string; apps: App[] } | null>(null);
+  const [calOffset, setCalOffset] = useState(0); // 0 = current month, -1 = previous, +1 = next
   const corp = apps.filter(a => a.type === "corporate");
   const free = apps.filter(a => a.type === "freelance");
   const interviews = apps.filter(a => a.status === "interview_scheduled" || a.status === "interviewed").length;
@@ -279,7 +280,8 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
 
   // Mini calendar
   const now = new Date();
-  const year = now.getFullYear(), month = now.getMonth();
+  const calBase = new Date(now.getFullYear(), now.getMonth() + calOffset, 1);
+  const year = calBase.getFullYear(), month = calBase.getMonth();
   const first = new Date(year, month, 1).getDay();
   const days = new Date(year, month + 1, 0).getDate();
   const appByDay: Record<number, number> = {};
@@ -288,19 +290,18 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
     if (d.getFullYear() === year && d.getMonth() === month) appByDay[d.getDate()] = (appByDay[d.getDate()] || 0) + 1;
   });
 
-  // Week activity
-  const weekDays: Date[] = [];
-  for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); weekDays.push(d); }
-  const dayCounts = weekDays.map(d => apps.filter(a => new Date(a.date_applied).toDateString() === d.toDateString()).length);
-  const maxDay = Math.max(1, ...dayCounts);
   const dayLabels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+  // Rejections — sorted most recent first
+  const rejections = apps
+    .filter(a => a.status === "rejected")
+    .sort((a, b) => (b.date_applied || "").localeCompare(a.date_applied || ""));
 
   const openDay = (d: number) => {
     const dayApps = apps.filter(a => {
       const dt = new Date(a.date_applied);
       return dt.getFullYear() === year && dt.getMonth() === month && dt.getDate() === d;
     });
-    if (!dayApps.length) return;
     const label = new Date(year, month, d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     setDayModal({ date: label, apps: dayApps });
   };
@@ -381,38 +382,74 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
         ) : <div style={{ color: "var(--text3)", fontSize: 13, padding: "16px 0", textAlign: "center" }}>No data yet</div>}
       </div>
 
-      <div className="charts-grid">
+      <div className="charts-grid" style={{ gridTemplateColumns: "minmax(260px, 320px) 1fr" }}>
         <div className="card">
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Mini Calendar — Applications</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 6 }}>
+            <button className="btn btn-ghost btn-sm" style={{ padding: "2px 8px" }} onClick={() => setCalOffset(o => o - 1)} title="Previous month">‹</button>
+            <div style={{ fontSize: 13, fontWeight: 600, textAlign: "center", flex: 1 }}>
+              {calBase.toLocaleString("default", { month: "long" })} {year}
+            </div>
+            <button className="btn btn-ghost btn-sm" style={{ padding: "2px 8px" }} onClick={() => setCalOffset(o => o + 1)} title="Next month" disabled={calOffset >= 0}>›</button>
+          </div>
           <div className="week-day-labels">{dayLabels.map(d => <div key={d} className="cal-day-label">{d}</div>)}</div>
           <div className="cal-grid">
             {Array.from({ length: first }).map((_, i) => <div key={"e" + i} />)}
             {Array.from({ length: days }, (_, i) => i + 1).map(d => {
               const count = appByDay[d] || 0;
-              const isToday = d === now.getDate();
+              const isToday = calOffset === 0 && d === now.getDate();
               const intensity = count ? Math.min(1, count / 5) : 0;
-              const style: React.CSSProperties = count ? { background: `color-mix(in oklab, var(--accent) ${15 + intensity * 65}%, var(--bg-elev))`, color: "#fff", fontWeight: 700, cursor: "pointer" } : {};
-              return <div key={d} className={`cal-day${isToday ? " today" : ""}`} style={style} title={count ? `${count} app${count > 1 ? "s" : ""} — click to view` : "No apps"} onClick={() => openDay(d)}>{d}</div>;
+              const style: React.CSSProperties = count
+                ? { background: `color-mix(in oklab, var(--accent) ${15 + intensity * 65}%, var(--bg-elev))`, color: "#fff", fontWeight: 700, cursor: "pointer" }
+                : { cursor: "pointer" };
+              return <div key={d} className={`cal-day${isToday ? " today" : ""}`} style={style} title={count ? `${count} app${count > 1 ? "s" : ""} — click to view` : "Click to view"} onClick={() => openDay(d)}>{d}</div>;
             })}
           </div>
-          <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8, textAlign: "center" }}>{now.toLocaleString("default", { month: "long" })} {year}</div>
+          <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 8, textAlign: "center" }}>
+            {calOffset === 0 ? "Current month" : calOffset < 0 ? `${Math.abs(calOffset)} month${Math.abs(calOffset) > 1 ? "s" : ""} ago` : "Upcoming"} · click any day
+          </div>
         </div>
         <div className="card">
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Week Activity</div>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80, padding: "0 4px" }}>
-            {weekDays.map((d, i) => {
-              const count = dayCounts[i];
-              const pct = Math.max(8, Math.round(count / maxDay * 100));
-              const isToday = d.toDateString() === new Date().toDateString();
-              return (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: count ? "var(--accent)" : "var(--text3)" }}>{count || ""}</div>
-                  <div style={{ width: "100%", height: `${pct}%`, background: isToday ? "var(--accent)" : "var(--border2)", borderRadius: "3px 3px 0 0", minHeight: 4, transition: "height .4s" }} />
-                  <div style={{ fontSize: 10, color: isToday ? "var(--accent)" : "var(--text3)" }}>{dayLabels[d.getDay()]}</div>
-                </div>
-              );
-            })}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Rejections & Feedback</div>
+            <div style={{ fontSize: 12, color: "var(--text2)" }}>
+              {rejections.length} total · focus areas to improve
+            </div>
           </div>
+          {rejections.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 360, overflowY: "auto" }}>
+              {rejections.map(r => (
+                <div key={r.id} onClick={() => onView(r)}
+                  style={{ padding: 12, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 10, cursor: "pointer", transition: "border-color .15s" }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--accent)")}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                    <div className="company-avatar" style={{ width: 30, height: 30, fontSize: 11 }}>{initials(r.company)}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{r.company}</div>
+                      <div style={{ fontSize: 11, color: "var(--text2)" }}>{r.title} · {r.platform || "—"} · {fmtDate(r.date_applied)}</div>
+                    </div>
+                    <span className="badge badge-rejected">Rejected</span>
+                  </div>
+                  {r.notes ? (
+                    <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5, whiteSpace: "pre-wrap", paddingLeft: 40, borderLeft: "2px solid var(--accent)", marginLeft: 14, paddingTop: 2, paddingBottom: 2 }}>
+                      <span style={{ color: "var(--text3)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Feedback / Notes</span>
+                      <div style={{ marginTop: 2 }}>{r.notes}</div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: "var(--text3)", fontStyle: "italic", paddingLeft: 40 }}>
+                      No feedback recorded — click to add notes for future improvement.
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty" style={{ padding: "24px 0" }}>
+              <div className="empty-icon">🎯</div>
+              <div className="empty-title">No rejections yet</div>
+              <div style={{ fontSize: 12 }}>When you log a rejected application with notes, feedback will appear here so you can spot patterns.</div>
+            </div>
+          )}
         </div>
       </div>
 
