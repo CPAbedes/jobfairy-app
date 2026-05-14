@@ -339,15 +339,36 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
       <div className="charts-grid">
         <div className="card">
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Applications by Platform</div>
-          <div className="platform-bar-wrap">
-            {platforms.length ? platforms.map((p, i) => (
-              <div key={p[0]} className="platform-row">
-                <div className="platform-name">{p[0]}</div>
-                <div className="bar-track"><div className="bar-fill" style={{ width: `${Math.round(p[1] / maxP * 100)}%`, background: PLATFORM_COLORS[i % PLATFORM_COLORS.length] }} /></div>
-                <div className="bar-count">{p[1]}</div>
-              </div>
-            )) : <div style={{ color: "var(--text3)", fontSize: 13, padding: "16px 0", textAlign: "center" }}>No data yet</div>}
-          </div>
+          {platforms.length ? (
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 200, padding: "8px 4px 0", borderBottom: "1px solid var(--border)" }}>
+              {platforms.map((p, i) => {
+                const h = Math.max(6, Math.round((p[1] / maxP) * 170));
+                return (
+                  <div key={p[0]} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)" }}>{p[1]}</div>
+                    <div title={`${p[0]}: ${p[1]}`}
+                      style={{
+                        width: "100%",
+                        height: h,
+                        background: PLATFORM_COLORS[i % PLATFORM_COLORS.length],
+                        borderRadius: "6px 6px 0 0",
+                        transition: "opacity .15s",
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : <div style={{ color: "var(--text3)", fontSize: 13, padding: "16px 0", textAlign: "center" }}>No data yet</div>}
+          {platforms.length ? (
+            <div style={{ display: "flex", gap: 12, padding: "8px 4px 0" }}>
+              {platforms.map(p => (
+                <div key={p[0]} style={{ flex: 1, fontSize: 10, color: "var(--text2)", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={p[0]}>
+                  {p[0]}
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="card">
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Conversion Funnel</div>
@@ -467,8 +488,19 @@ function Dashboard({ apps, onView, onAdd }: { apps: App[]; onView: (a: App) => v
       </div>
 
       <div className="card">
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Recent Applications</div>
-        {apps.length ? <JobTable list={apps.slice(0, 8)} onView={onView} onEdit={() => {}} onDelete={() => {}} hideActions /> :
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 8, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>Recent Applications</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, color: "var(--text3)" }}>Sort by</span>
+            <select className="filter-select" value={recentSort} onChange={e => setRecentSort(e.target.value as typeof recentSort)} style={{ padding: "4px 8px", fontSize: 12 }}>
+              <option value="priority">Priority</option>
+              <option value="date_new">Date Applied (Newest)</option>
+              <option value="date_old">Date Applied (Oldest)</option>
+              <option value="company">Company (A–Z)</option>
+            </select>
+          </div>
+        </div>
+        {apps.length ? <JobTable list={sortedRecent} onView={onView} onEdit={() => {}} onDelete={() => {}} hideActions /> :
           <div className="empty"><div className="empty-icon">📋</div><div className="empty-title">No applications yet</div><div>Add your first application to get started.</div><br /><button className="btn btn-primary" onClick={onAdd}>＋ Add Application</button></div>
         }
       </div>
