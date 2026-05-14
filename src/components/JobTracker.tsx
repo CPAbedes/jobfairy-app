@@ -60,6 +60,18 @@ export function JobTracker() {
   const [editing, setEditing] = useState<App | null>(null);
   const [adding, setAdding] = useState<string | null>(null);
   const [viewing, setViewing] = useState<App | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  const searchResults = useMemo(() => {
+    const q = globalSearch.trim().toLowerCase();
+    if (!q) return [];
+    return apps.filter(a =>
+      a.company.toLowerCase().includes(q) ||
+      a.title.toLowerCase().includes(q) ||
+      (a.platform || "").toLowerCase().includes(q)
+    ).slice(0, 12);
+  }, [apps, globalSearch]);
 
   useEffect(() => {
     const stored = typeof window !== "undefined" && localStorage.getItem("jt_dark") === "1";
@@ -154,6 +166,31 @@ export function JobTracker() {
             ))}
           </div>
           <div className="topbar-actions">
+            <div className="search-box" style={{ position: "relative", maxWidth: 260 }}>
+              <span style={{ color: "var(--text3)" }}>🔍</span>
+              <input
+                placeholder="Search company to edit…"
+                value={globalSearch}
+                onChange={e => { setGlobalSearch(e.target.value); setShowSearchResults(true); }}
+                onFocus={() => setShowSearchResults(true)}
+                onBlur={() => setTimeout(() => setShowSearchResults(false), 180)}
+              />
+              {showSearchResults && globalSearch.trim() && (
+                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "var(--bg-elev)", border: "1px solid var(--border)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.18)", maxHeight: 320, overflowY: "auto", zIndex: 50 }}>
+                  {searchResults.length ? searchResults.map(a => (
+                    <div key={a.id} onMouseDown={() => { setEditing(a); setGlobalSearch(""); setShowSearchResults(false); }}
+                      style={{ padding: "10px 12px", cursor: "pointer", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 10 }}>
+                      <div className="company-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>{initials(a.company)}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.company}</div>
+                        <div style={{ fontSize: 11, color: "var(--text2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title} · {STATUS_LABEL[a.status] || a.status}</div>
+                      </div>
+                      <span style={{ fontSize: 11, color: "var(--accent)" }}>Edit ✏️</span>
+                    </div>
+                  )) : <div style={{ padding: "14px 12px", fontSize: 12, color: "var(--text3)", textAlign: "center" }}>No matches</div>}
+                </div>
+              )}
+            </div>
             <button className="btn btn-primary btn-sm" onClick={() => setAdding(tab === "freelance" ? "freelance" : "corporate")}>＋ Add Application</button>
             <div className={`dark-toggle${dark ? " on" : ""}`} onClick={toggleDark}><div className="dark-toggle-thumb" /></div>
             <button className="btn btn-ghost btn-sm" onClick={() => signOut()} title={user?.email}>Sign out</button>
